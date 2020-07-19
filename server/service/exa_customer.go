@@ -11,6 +11,7 @@ import (
 // @param     e               model.ExaCustomer
 // @auth                     （2020/04/05  20:22）
 // @return    err             error
+
 func CreateExaCustomer(e model.ExaCustomer) (err error) {
 	err = global.GVA_DB.Create(&e).Error
 	return err
@@ -19,8 +20,9 @@ func CreateExaCustomer(e model.ExaCustomer) (err error) {
 // @title    DeleteFileChunk
 // @description   delete a customer, 删除用户
 // @auth                     （2020/04/05  20:22）
-// @param     e               *model.ExaCustomer
+// @param     e               model.ExaCustomer
 // @return                    error
+
 func DeleteExaCustomer(e model.ExaCustomer) (err error) {
 	err = global.GVA_DB.Delete(e).Error
 	return err
@@ -31,6 +33,7 @@ func DeleteExaCustomer(e model.ExaCustomer) (err error) {
 // @param     e               *model.ExaCustomer
 // @auth                     （2020/04/05  20:22）
 // @return                    error
+
 func UpdateExaCustomer(e *model.ExaCustomer) (err error) {
 	err = global.GVA_DB.Save(e).Error
 	return err
@@ -42,6 +45,7 @@ func UpdateExaCustomer(e *model.ExaCustomer) (err error) {
 // @param     id              uint
 // @return                    error
 // @return    customer        ExaCustomer
+
 func GetExaCustomer(id uint) (err error, customer model.ExaCustomer) {
 	err = global.GVA_DB.Where("id = ?", id).First(&customer).Error
 	return
@@ -53,10 +57,11 @@ func GetExaCustomer(id uint) (err error, customer model.ExaCustomer) {
 // @param     sysUserAuthorityID              string
 // @param     info            PageInfo
 // @return                    error
+
 func GetCustomerInfoList(sysUserAuthorityID string, info request.PageInfo) (err error, list interface{}, total int) {
 	limit := info.PageSize
 	offset := info.PageSize * (info.Page - 1)
-	db := global.GVA_DB
+	db := global.GVA_DB.Model(&model.ExaCustomer{})
 	var a model.SysAuthority
 	a.AuthorityId = sysUserAuthorityID
 	err, auth := GetAuthorityInfo(a)
@@ -65,7 +70,7 @@ func GetCustomerInfoList(sysUserAuthorityID string, info request.PageInfo) (err 
 		dataId = append(dataId, v.AuthorityId)
 	}
 	var CustomerList []model.ExaCustomer
-	err = db.Where("sys_user_authority_id in (?)", dataId).Find(&CustomerList).Count(&total).Error
+	err = db.Where("sys_user_authority_id in (?)", dataId).Count(&total).Error
 	if err != nil {
 		return err, CustomerList, total
 	} else {

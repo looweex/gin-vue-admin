@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="system">
     <el-form :model="config" label-width="100px" ref="form" class="system">
       <h2>系统配置</h2>
       <el-form-item label="多点登录拦截">
@@ -9,7 +9,7 @@
         <el-input v-model="config.system.env"></el-input>
       </el-form-item>
       <el-form-item label="端口值">
-        <el-input v-model="config.system.addr"></el-input>
+        <el-input v-model.number="config.system.addr"></el-input>
       </el-form-item>
       <el-form-item label="数据库类型">
         <el-select v-model="config.system.dbType">
@@ -46,7 +46,7 @@
           <el-input v-model.number="config.mysql.maxOpenConns"></el-input>
         </el-form-item>
         <el-form-item label="logMode">
-          <el-checkbox v-model="config.log.logMode"></el-checkbox>
+          <el-checkbox v-model="config.mysql.logMode"></el-checkbox>
         </el-form-item>
       </template>
       <template v-show="config.system.dbType == 'sqlite'">
@@ -78,11 +78,6 @@
       <el-form-item label="secretKey">
         <el-input v-model="config.qiniu.secretKey"></el-input>
       </el-form-item>
-      <el-form-item>
-        <el-button @click="update" type="primary">立即更新</el-button>
-        <el-button @click="reload" type="primary">重启服务（开发中）</el-button>
-      </el-form-item>
-
       <h2>验证码配置</h2>
       <el-form-item label="keyLong">
         <el-input v-model.number="config.captcha.keyLong"></el-input>
@@ -93,12 +88,7 @@
       <el-form-item label="imgHeight">
         <el-input v-model.number="config.captcha.imgHeight"></el-input>
       </el-form-item>
-      <el-form-item>
-        <el-button @click="update" type="primary">立即更新</el-button>
-        <el-button @click="reload" type="primary">重启服务（开发中）</el-button>
-      </el-form-item>
-
-       <h2>日志配置</h2>
+      <h2>日志配置</h2>
       <el-form-item label="prefix">
         <el-input v-model.number="config.log.prefix"></el-input>
       </el-form-item>
@@ -114,9 +104,9 @@
 </template>
 
 <script>
-import { getSystemConfig, setSystemConfig } from '@/api/system'
+import { getSystemConfig, setSystemConfig } from "@/api/system";
 export default {
-  name: 'Config',
+  name: "Config",
   data() {
     return {
       config: {
@@ -127,40 +117,42 @@ export default {
         sqlite: {},
         redis: {},
         qiniu: {},
-        captcha:{},
-        log:{}
+        captcha: {},
+        log: {}
       }
-    }
+    };
   },
   async created() {
-    await this.initForm()
+    await this.initForm();
   },
   methods: {
     async initForm() {
-      const res = await getSystemConfig()
+      const res = await getSystemConfig();
       if (res.code == 0) {
-        this.config = res.data.config
+        this.config = res.data.config;
       }
     },
     reload() {},
     async update() {
-      const res = await setSystemConfig({ config: this.config })
+      const res = await setSystemConfig({ config: this.config });
       if (res.code == 0) {
         this.$message({
-          type: 'success',
-          message: '配置文件设置成功'
-        })
-        await this.initForm()
+          type: "success",
+          message: "配置文件设置成功"
+        });
+        await this.initForm();
       }
     }
   }
-}
+};
 </script>
 <style lang="scss">
-h2 {
-  padding: 10px;
-  margin: 10px 0;
-  font-size: 16px;
-  box-shadow:-4px 1px 3px 0px #e7e8e8
+.system {
+  h2 {
+    padding: 10px;
+    margin: 10px 0;
+    font-size: 16px;
+    box-shadow: -4px 1px 3px 0px #e7e8e8;
+  }
 }
 </style>

@@ -10,11 +10,11 @@ import (
 	"github.com/swaggo/gin-swagger/swaggerFiles"
 )
 
-//初始化总路由
+// 初始化总路由
+
 func Routers() *gin.Engine {
 	var Router = gin.Default()
-
-	//Router.Use(middleware.LoadTls())  // 打开就能玩https了
+	// Router.Use(middleware.LoadTls())  // 打开就能玩https了
 	global.GVA_LOG.Debug("use middleware logger")
 	// 跨域
 	Router.Use(middleware.Cors())
@@ -35,6 +35,9 @@ func Routers() *gin.Engine {
 	router.InitSystemRouter(ApiGroup)                // system相关路由
 	router.InitCustomerRouter(ApiGroup)              // 客户路由
 	router.InitAutoCodeRouter(ApiGroup)              // 创建自动化代码
+	router.InitSysDictionaryDetailRouter(ApiGroup)   // 字典详情管理
+	router.InitSysDictionaryRouter(ApiGroup)         // 字典管理
+	router.InitSysOperationRecordRouter(ApiGroup)    // 操作记录
 	global.GVA_LOG.Info("router register success")
 	return Router
 }

@@ -7,6 +7,7 @@ import (
 	"gin-vue-admin/model/request"
 	resp "gin-vue-admin/model/response"
 	"gin-vue-admin/service"
+	"gin-vue-admin/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,7 +15,7 @@ import (
 // @Summary 获取用户动态路由
 // @Security ApiKeyAuth
 // @Produce  application/json
-// @Param data body api.RegisterAndLoginStruct true "可以什么都不填"
+// @Param data body request.RegisterAndLoginStruct true "可以什么都不填"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"返回成功"}"
 // @Router /menu/getMenu [post]
 func GetMenu(c *gin.Context) {
@@ -33,13 +34,18 @@ func GetMenu(c *gin.Context) {
 // @Security ApiKeyAuth
 // @accept application/json
 // @Produce application/json
-// @Param data body model.PageInfo true "分页获取基础menu列表"
+// @Param data body request.PageInfo true "分页获取基础menu列表"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
 // @Router /menu/getMenuList [post]
 func GetMenuList(c *gin.Context) {
 	var pageInfo request.PageInfo
 	_ = c.ShouldBindJSON(&pageInfo)
-	err, menuList, total := service.GetInfoList(pageInfo)
+	PageVerifyErr := utils.Verify(pageInfo, utils.CustomizeMap["PageVerify"])
+	if PageVerifyErr != nil {
+		response.FailWithMessage(PageVerifyErr.Error(), c)
+		return
+	}
+	err, menuList, total := service.GetInfoList()
 	if err != nil {
 		response.FailWithMessage(fmt.Sprintf("获取数据失败，%v", err), c)
 	} else {
@@ -63,6 +69,26 @@ func GetMenuList(c *gin.Context) {
 func AddBaseMenu(c *gin.Context) {
 	var menu model.SysBaseMenu
 	_ = c.ShouldBindJSON(&menu)
+	MenuVerify := utils.Rules{
+		"Path":      {utils.NotEmpty()},
+		"ParentId":  {utils.NotEmpty()},
+		"Name":      {utils.NotEmpty()},
+		"Component": {utils.NotEmpty()},
+		"Sort":      {utils.Ge("0")},
+	}
+	MenuVerifyErr := utils.Verify(menu, MenuVerify)
+	if MenuVerifyErr != nil {
+		response.FailWithMessage(MenuVerifyErr.Error(), c)
+		return
+	}
+	MetaVerify := utils.Rules{
+		"Title": {utils.NotEmpty()},
+	}
+	MetaVerifyErr := utils.Verify(menu.Meta, MetaVerify)
+	if MetaVerifyErr != nil {
+		response.FailWithMessage(MetaVerifyErr.Error(), c)
+		return
+	}
 	err := service.AddBaseMenu(menu)
 	if err != nil {
 		response.FailWithMessage(fmt.Sprintf("添加失败，%v", err), c)
@@ -75,7 +101,7 @@ func AddBaseMenu(c *gin.Context) {
 // @Summary 获取用户动态路由
 // @Security ApiKeyAuth
 // @Produce  application/json
-// @Param data body api.RegisterAndLoginStruct true "可以什么都不填"
+// @Param data body request.RegisterAndLoginStruct true "可以什么都不填"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"返回成功"}"
 // @Router /menu/getBaseMenuTree [post]
 func GetBaseMenuTree(c *gin.Context) {
@@ -84,7 +110,6 @@ func GetBaseMenuTree(c *gin.Context) {
 		response.FailWithMessage(fmt.Sprintf("获取失败，%v", err), c)
 	} else {
 		response.OkWithData(resp.SysBaseMenusResponse{Menus: menus}, c)
-
 	}
 }
 
@@ -93,13 +118,20 @@ func GetBaseMenuTree(c *gin.Context) {
 // @Security ApiKeyAuth
 // @accept application/json
 // @Produce application/json
-// @Param data body model.AddMenuAuthorityInfo true "增加menu和角色关联关系"
+// @Param data body request.AddMenuAuthorityInfo true "增加menu和角色关联关系"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
 // @Router /menu/addMenuAuthority [post]
 func AddMenuAuthority(c *gin.Context) {
 	var addMenuAuthorityInfo request.AddMenuAuthorityInfo
 	_ = c.ShouldBindJSON(&addMenuAuthorityInfo)
-
+	MenuVerify := utils.Rules{
+		"AuthorityId": {"notEmpty"},
+	}
+	MenuVerifyErr := utils.Verify(addMenuAuthorityInfo, MenuVerify)
+	if MenuVerifyErr != nil {
+		response.FailWithMessage(MenuVerifyErr.Error(), c)
+		return
+	}
 	err := service.AddMenuAuthority(addMenuAuthorityInfo.Menus, addMenuAuthorityInfo.AuthorityId)
 	if err != nil {
 		response.FailWithMessage(fmt.Sprintf("添加失败，%v", err), c)
@@ -113,12 +145,20 @@ func AddMenuAuthority(c *gin.Context) {
 // @Security ApiKeyAuth
 // @accept application/json
 // @Produce application/json
-// @Param data body model.AuthorityIdInfo true "增加menu和角色关联关系"
+// @Param data body request.AuthorityIdInfo true "增加menu和角色关联关系"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
 // @Router /menu/GetMenuAuthority [post]
 func GetMenuAuthority(c *gin.Context) {
 	var authorityIdInfo request.AuthorityIdInfo
 	_ = c.ShouldBindJSON(&authorityIdInfo)
+	MenuVerify := utils.Rules{
+		"AuthorityId": {"notEmpty"},
+	}
+	MenuVerifyErr := utils.Verify(authorityIdInfo, MenuVerify)
+	if MenuVerifyErr != nil {
+		response.FailWithMessage(MenuVerifyErr.Error(), c)
+		return
+	}
 	err, menus := service.GetMenuAuthority(authorityIdInfo.AuthorityId)
 	if err != nil {
 		response.FailWithDetailed(response.ERROR, resp.SysMenusResponse{Menus: menus}, fmt.Sprintf("添加失败，%v", err), c)
@@ -132,12 +172,17 @@ func GetMenuAuthority(c *gin.Context) {
 // @Security ApiKeyAuth
 // @accept application/json
 // @Produce application/json
-// @Param data body model.GetById true "删除菜单"
+// @Param data body request.GetById true "删除菜单"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
 // @Router /menu/deleteBaseMenu [post]
 func DeleteBaseMenu(c *gin.Context) {
 	var idInfo request.GetById
 	_ = c.ShouldBindJSON(&idInfo)
+	IdVerifyErr := utils.Verify(idInfo, utils.CustomizeMap["IdVerify"])
+	if IdVerifyErr != nil {
+		response.FailWithMessage(IdVerifyErr.Error(), c)
+		return
+	}
 	err := service.DeleteBaseMenu(idInfo.Id)
 	if err != nil {
 		response.FailWithMessage(fmt.Sprintf("删除失败：%v", err), c)
@@ -158,6 +203,26 @@ func DeleteBaseMenu(c *gin.Context) {
 func UpdateBaseMenu(c *gin.Context) {
 	var menu model.SysBaseMenu
 	_ = c.ShouldBindJSON(&menu)
+	MenuVerify := utils.Rules{
+		"Path":      {"notEmpty"},
+		"ParentId":  {utils.NotEmpty()},
+		"Name":      {utils.NotEmpty()},
+		"Component": {utils.NotEmpty()},
+		"Sort":      {utils.Ge("0")},
+	}
+	MenuVerifyErr := utils.Verify(menu, MenuVerify)
+	if MenuVerifyErr != nil {
+		response.FailWithMessage(MenuVerifyErr.Error(), c)
+		return
+	}
+	MetaVerify := utils.Rules{
+		"Title": {utils.NotEmpty()},
+	}
+	MetaVerifyErr := utils.Verify(menu.Meta, MetaVerify)
+	if MetaVerifyErr != nil {
+		response.FailWithMessage(MetaVerifyErr.Error(), c)
+		return
+	}
 	err := service.UpdateBaseMenu(menu)
 	if err != nil {
 		response.FailWithMessage(fmt.Sprintf("修改失败：%v", err), c)
@@ -171,12 +236,20 @@ func UpdateBaseMenu(c *gin.Context) {
 // @Security ApiKeyAuth
 // @accept application/json
 // @Produce application/json
-// @Param data body model.GetById true "根据id获取菜单"
+// @Param data body request.GetById true "根据id获取菜单"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
 // @Router /menu/getBaseMenuById [post]
 func GetBaseMenuById(c *gin.Context) {
 	var idInfo request.GetById
 	_ = c.ShouldBindJSON(&idInfo)
+	MenuVerify := utils.Rules{
+		"Id": {"notEmpty"},
+	}
+	MenuVerifyErr := utils.Verify(idInfo, MenuVerify)
+	if MenuVerifyErr != nil {
+		response.FailWithMessage(MenuVerifyErr.Error(), c)
+		return
+	}
 	err, menu := service.GetBaseMenuById(idInfo.Id)
 	if err != nil {
 		response.FailWithMessage(fmt.Sprintf("查询失败：%v", err), c)

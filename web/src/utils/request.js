@@ -32,10 +32,12 @@ service.interceptors.request.use(
     config => {
         showLoading()
         const token = store.getters['user/token']
+        const user = store.getters['user/userInfo']
         config.data = JSON.stringify(config.data);
         config.headers = {
             'Content-Type': 'application/json',
-            'x-token': token
+            'x-token': token,
+            'x-user-id':user.ID
         }
         return config;
     },
@@ -60,14 +62,12 @@ service.interceptors.response.use(
         } else {
             Message({
                 showClose: true,
-                message: response.data.msg,
+                message: response.data.msg || decodeURI(response.headers.msg),
                 type: 'error',
-                onClose: () => {
-                    if (response.data.data && response.data.data.reload) {
-                        store.commit('user/LoginOut')
-                    }
-                }
             })
+            if (response.data.data && response.data.data.reload) {
+                store.commit('user/LoginOut')
+            }
             return Promise.reject(response.data.msg)
         }
     },

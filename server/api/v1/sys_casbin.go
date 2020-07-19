@@ -6,6 +6,7 @@ import (
 	"gin-vue-admin/model/request"
 	resp "gin-vue-admin/model/response"
 	"gin-vue-admin/service"
+	"gin-vue-admin/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,12 +15,17 @@ import (
 // @Security ApiKeyAuth
 // @accept application/json
 // @Produce application/json
-// @Param data body model.CasbinInReceive true "更改角色api权限"
+// @Param data body request.CasbinInReceive true "更改角色api权限"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
 // @Router /casbin/UpdateCasbin [post]
 func UpdateCasbin(c *gin.Context) {
 	var cmr request.CasbinInReceive
 	_ = c.ShouldBindJSON(&cmr)
+	AuthorityIdVerifyErr := utils.Verify(cmr, utils.CustomizeMap["AuthorityIdVerify"])
+	if AuthorityIdVerifyErr != nil {
+		response.FailWithMessage(AuthorityIdVerifyErr.Error(), c)
+		return
+	}
 	err := service.UpdateCasbin(cmr.AuthorityId, cmr.CasbinInfos)
 	if err != nil {
 		response.FailWithMessage(fmt.Sprintf("添加规则失败，%v", err), c)
@@ -33,12 +39,17 @@ func UpdateCasbin(c *gin.Context) {
 // @Security ApiKeyAuth
 // @accept application/json
 // @Produce application/json
-// @Param data body model.CasbinInReceive true "获取权限列表"
+// @Param data body request.CasbinInReceive true "获取权限列表"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
 // @Router /casbin/getPolicyPathByAuthorityId [post]
 func GetPolicyPathByAuthorityId(c *gin.Context) {
 	var cmr request.CasbinInReceive
 	_ = c.ShouldBindJSON(&cmr)
+	AuthorityIdVerifyErr := utils.Verify(cmr, utils.CustomizeMap["AuthorityIdVerify"])
+	if AuthorityIdVerifyErr != nil {
+		response.FailWithMessage(AuthorityIdVerifyErr.Error(), c)
+		return
+	}
 	paths := service.GetPolicyPathByAuthorityId(cmr.AuthorityId)
 	response.OkWithData(resp.PolicyPathResponse{Paths: paths}, c)
 }
@@ -48,7 +59,7 @@ func GetPolicyPathByAuthorityId(c *gin.Context) {
 // @Security ApiKeyAuth
 // @accept application/json
 // @Produce application/json
-// @Param data body model.CasbinInReceive true "获取权限列表"
+// @Param data body request.CasbinInReceive true "获取权限列表"
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
 // @Router /casbin/CasbinTest [get]
 func CasbinTest(c *gin.Context) {
